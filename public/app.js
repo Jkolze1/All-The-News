@@ -27,6 +27,20 @@ $(document).on("click", "p", function() {
       }
     });
 });
+// Scrape stuff
+$(document).ready(function() {
+  var articleContainer = $(".article-container");
+  $(document).on("click", ".btn.save", handleArticleSave);
+  $(document).on("click", ".scrape-new", handleArticleScrape);
+  $(".clear").on("click", handleArticleClear);
+  function handleArticleScrape() {
+    $.get("/api/fetch").then(function(data) {
+      initPage();
+      bootbox.alert($("<h3 class='text-center m-top-80'>").text(data.message));
+    });
+  }
+
+
 
 $(document).on("click", "#savenote", function() {
   var thisId = $(this).attr("data-id");
@@ -56,4 +70,5 @@ $(document).on("click", "#deletenote", function() {
   });
   $("#titleinput").val("");
   $("#bodyinput").val("");
+});
 });
