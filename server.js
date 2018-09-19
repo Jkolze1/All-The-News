@@ -2,90 +2,120 @@ var express = require("express");
 var bodyParser = require("body-parser");
 var logger = require("morgan");
 var mongoose = require("mongoose");
-var axios = require("axios");
+mongoose.set('useCreateIndex', true);
+var Note = require("./models/Note.js");
+var Article = require("./models/Article.js");
+
+var request = require("request");
 var cheerio = require("cheerio");
 
-// Require all models
-var db = require("./models");
+var PORT = process.env.PORT || 3000;
+mongoose.Promise = Promise;
 
-var PORT = 3000;
-
-// Initialize Express
 var app = express();
 
-// Use morgan logger for logging requests
 app.use(logger("dev"));
-// Use body-parser for handling form submissions
-app.use(bodyParser.urlencoded({ extended: true }));
-// Use express.static to serve the public folder as a static directory
+app.use(bodyParser.urlencoded({
+  extended: false
+}));
+
 app.use(express.static("public"));
 
-// Connect to the Mongo DB
-mongoose.connect("mongodb://localhost/week18Populater");
+mongoose.connect("mongodb://heroku_j5jgln1r:kadq0g2imkt7rfqf61t58aeruv@ds163681.mlab.com:63681/heroku_j5jgln1r");
+var db = mongoose.connection;
 
-// Routes
+db.on("error", function(error) {
+  console.log("Mongoose Error: ", error);
+});
 
-// A GET route for scraping the echoJS website
+db.once("open", function() {
+  console.log("Mongoose connection successful.");
+});
+
 app.get("/scrape", function(req, res) {
-  // First, we grab the body of the html with request
-  axios.get("http://www.echojs.com/").then(function(response) {
-    // Then, we load that into cheerio and save it to $ for a shorthand selector
-    var $ = cheerio.load(response.data);
-
-    // Now, we grab every h2 within an article tag, and do the following:
-    $("article h2").each(function(i, element) {
-      // Save an empty result object
+  request("https://news.google.com/", function(error, response, html) {
+    var $ = cheerio.load(html);
+    $("h2.esc-lead-article-title").each(function(i, element) {
       var result = {};
+      result.title = $(this).children("a").children("span").text();
+      result.link = $(this).children("a").attr("href");
+      var entry = new Article(result);
+      entry.save(function(err, doc) {
+        {unique: true}
+        if (err) {
+          console.log(err);
+        }
+        else {
+          console.log(doc);
+        }
+      });
 
-      // Add the text and href of every link, and save them as properties of the result object
-      result.title = $(this)
-        .children("a")
-        .text();
-      result.link = $(this)
-        .children("a")
-        .attr("href");
-
-      // Create a new Article using the `result` object built from scraping
-      db.Article.create(result)
-        .then(function(dbArticle) {
-          // View the added result in the console
-          console.log(dbArticle);
-        })
-        .catch(function(err) {
-          // If an error occurred, send it to the client
-          return res.json(err);
-        });
     });
+  });
+  res.redirect("/");
+});
 
-    // If we were able to successfully scrape and save an Article, send a message to the client
-    res.send("Scrape Complete");
+app.get("/articles", function(req, res) {
+  Article.find({}, function(error, doc) {
+    if (error) {
+      console.log(error);
+    }
+    else {
+      res.json(doc);
+    }
   });
 });
 
-// Route for getting all Articles from the db
-app.get("/articles", function(req, res) {
-  // TODO: Finish the route so it grabs all of the articles
-});
-
-// Route for grabbing a specific Article by id, populate it with it's note
 app.get("/articles/:id", function(req, res) {
-  // TODO
-  // ====
-  // Finish the route so it finds one article using the req.params.id,
-  // and run the populate method with "note",
-  // then responds with the article with the note included
+  Article.findOne({ "_id": req.params.id })
+  .populate("note")
+  .exec(function(error, doc) {
+    if (error) {
+      console.log(error);
+    }
+    else {
+      res.json(doc);
+    }
+  });
 });
 
-// Route for saving/updating an Article's associated Note
+
 app.post("/articles/:id", function(req, res) {
-  // TODO
-  // ====
-  // save the new note that gets posted to the Notes collection
-  // then find an article from the req.params.id
-  // and update it's "note" property with the _id of the new note
+  var newNote = new Note(req.body);
+
+  newNote.save(function(error, doc) {
+    if (error) {
+      console.log(error);
+    }
+    else {
+      Article.findOneAndUpdate({ "_id": req.params.id }, { "note": doc._id })
+      .exec(function(err, doc) {
+        if (err) {
+          console.log(err);
+        }
+        else {
+          res.send(doc);
+        }
+      });
+    }
+  });
+});
+//delete is not working
+app.delete("/delete/:id", function (req, res) {
+  var id = req.params.id.toString();
+  Note.remove({
+    "_id": id
+  }).exec(function (error, doc) {
+    if (error) {
+      console.log(error);
+    }
+    else {
+      console.log("note deleted");
+      res.redirect("/" );
+    }
+  });
 });
 
-// Start the server
 app.listen(PORT, function() {
-  console.log("App running on port " + PORT + "!");
+  console.log("App running on port 3000!");
 });
