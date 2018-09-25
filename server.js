@@ -8,8 +8,9 @@ var Article = require("./models/Article.js");
 
 var request = require("request");
 var cheerio = require("cheerio");
-server.listen(process.env.PORT || port)
+var PORT = process.env.PORT || 3000;
 mongoose.Promise = Promise;
+
 
 var app = express();
 
