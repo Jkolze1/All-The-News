@@ -1,0 +1,13 @@
+
+{
+  "name": "news",
+  "version": "1.0.0",
+  "description": "News scrapping app",
+  "main": "server.js",
+  "scripts": {
+    "test": "https://github.com/Jkolze1/All-The-News-Thats-Fit-To-Scrape/tree/master",
+    "start": "node server.js"
+  },
+  "author": "Jacqueline Kolze",
+  "license": "ISC"
+}
