@@ -8,10 +8,7 @@ var Article = require("./models/Article.js");
 
 var request = require("request");
 var cheerio = require("cheerio");
-var server = app.listen(process.env.PORT || 5000, function () {
-var port = server.address().port;
-  console.log("Express is working on port " + port);
-});
+server.listen(process.env.PORT || port)
 mongoose.Promise = Promise;
 
 var app = express();
