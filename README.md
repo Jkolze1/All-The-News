@@ -11,4 +11,4 @@ Node.js (Javascript environment)
 Mongoose (ODM)
 
 
-Link to project: https://all-the-news-thats.herokuapp.com/#
+Link to project: https://all-the-news-thats.herokuapp.com/
